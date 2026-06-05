@@ -1,0 +1,236 @@
+{
+  "title": "Методика комплексного исследования образа жёсткого диска и дампа ОЗУ Linux-системы",
+  "source": "Глава 3 ВКР «КОМПЬЮТЕРНО-ТЕХНИЧЕСКАЯ ЭКСПЕРТИЗА ПК ПОД УПРАВЛЕНИЕМ ОС LINUX»",
+  "expertQuestions": [
+    "Содержатся ли в представленных цифровых объектах следы вредоносной активности?",
+    "Каковы дата, время и механизм первоначальной компрометации системы?",
+    "Обнаружены ли сведения о сетевых соединениях с внешними IP-адресами?",
+    "Какие сведения о действиях злоумышленника могут быть установлены?",
+    "Какие механизмы закрепления могли быть использованы злоумышленником?"
+  ],
+  "stages": [
+    {
+      "id": "prep",
+      "order": 1,
+      "title": "Подготовительный этап экспертного исследования",
+      "goal": "Принять объект, зафиксировать состояние, проверить упаковку, маркировку, тип данных и целостность копий",
+      "expectedResult": "Журнал приёма объектов, исходные хеш-значения, рабочая копия либо подтверждение корректности представленного образа",
+      "guide": [
+        "Зарегистрировать поступившие объекты: физический носитель, forensic-образ (raw/E01/AFF), сегменты EWF, дамп памяти, сопроводительные документы",
+        "Провести внешнюю фиксацию: маркировка, серийные номера, упаковка, пломбы",
+        "Для EWF/E01 — убедиться в наличии первого сегмента и полного комплекта",
+        "Для raw — зафиксировать размер файла, время получения, хеш-значения",
+        "Создать рабочую копию; аналитика только по образу или проверенной копии",
+        "При съёме RAM с живой системы — LiME в формате lime (не raw); зафиксировать, что снятие RAM изменило систему"
+      ],
+      "qualityCheckpoints": [
+        "Совпадение исходных и вычисленных хешей",
+        "Документирование формата образа и способа получения",
+        "Отдельная фиксация факта изменения системы при съёме RAM"
+      ],
+      "fields": [
+        { "id": "caseNumber", "type": "text", "label": "Номер дела / постановления", "required": true },
+        { "id": "expertName", "type": "text", "label": "ФИО эксперта", "required": true },
+        { "id": "expertOrg", "type": "text", "label": "Экспертное учреждение" },
+        { "id": "receiptDate", "type": "date", "label": "Дата приёма объектов", "required": true },
+        { "id": "hasDiskImage", "type": "select", "label": "Представлен образ диска?", "options": ["да", "нет"], "required": true },
+        { "id": "diskImageFormat", "type": "select", "label": "Формат образа диска", "options": ["raw", "E01/EWF", "AFF", "VHD", "другой"], "showIf": { "hasDiskImage": "да" } },
+        { "id": "diskImageName", "type": "text", "label": "Имя файла образа диска", "showIf": { "hasDiskImage": "да" } },
+        { "id": "diskMd5", "type": "text", "label": "MD5 образа диска", "showIf": { "hasDiskImage": "да" } },
+        { "id": "diskSha256", "type": "text", "label": "SHA-256 образа диска", "showIf": { "hasDiskImage": "да" } },
+        { "id": "hasRamDump", "type": "select", "label": "Представлен дамп оперативной памяти?", "options": ["да", "нет"], "required": true },
+        { "id": "ramFormat", "type": "select", "label": "Формат дампа RAM", "options": ["lime", "raw", "другой", "неизвестен"], "showIf": { "hasRamDump": "да" } },
+        { "id": "ramDumpName", "type": "text", "label": "Имя файла дампа RAM", "showIf": { "hasRamDump": "да" } },
+        { "id": "ramMd5", "type": "text", "label": "MD5 дампа RAM", "showIf": { "hasRamDump": "да" } },
+        { "id": "ramSha256", "type": "text", "label": "SHA-256 дампа RAM", "showIf": { "hasRamDump": "да" } },
+        { "id": "ramAcquisitionNote", "type": "textarea", "label": "Способ и условия получения дампа RAM (LiME и т.д.)", "showIf": { "hasRamDump": "да" } },
+        { "id": "liveSystemCapture", "type": "select", "label": "Дамп снят с работающей системы (изменение состояния)?", "options": ["да", "нет", "не применимо"], "showIf": { "hasRamDump": "да" } },
+        { "id": "hashMatch", "type": "select", "label": "Исходные и вычисленные хеши совпадают?", "options": ["да", "нет", "частично"], "required": true },
+        { "id": "workingCopyCreated", "type": "select", "label": "Рабочая копия создана?", "options": ["да", "нет — работа по представленному образу"], "required": true },
+        { "id": "prepNotes", "type": "textarea", "label": "Заметки подготовительного этапа" }
+      ]
+    },
+    {
+      "id": "verify",
+      "order": 2,
+      "title": "Процессуальная и техническая верификация, подготовка объектов и профилирование",
+      "goal": "Установить правовые рамки, тип образа, разметку носителя, ФС, системные подсистемы Linux",
+      "expectedResult": "Исследовательский профиль объекта: тип образа, разделы, ФС, журналирование, init-система, учётные записи, источники следов",
+      "skipIf": { "hasDiskImage": "нет" },
+      "guide": [
+        "Убедиться в соответствии исследования поставленным вопросам (ст. 195, 204 УПК РФ, ФЗ № 73-ФЗ)",
+        "Определить тип образа и структуру носителя (mmls)",
+        "Сформировать гипотезу о ФС: ext4, XFS, Btrfs; journald; web-stack",
+        "Зафиксировать offset раздела, тип ФС (fsstat), версию ОС (os-release)"
+      ],
+      "qualityCheckpoints": [
+        "Документирование схемы разделов и смещений",
+        "Фиксация версии ОС, ядра, init-системы"
+      ],
+      "fields": [
+        { "id": "questionsMatch", "type": "select", "label": "Объекты соответствуют вопросам постановления?", "options": ["да", "требуется уточнение"], "required": true },
+        { "id": "partitionScheme", "type": "textarea", "label": "Схема разделов (результат mmls)", "placeholder": "Номер раздела, начальный сектор, тип..." },
+        { "id": "linuxOffset", "type": "text", "label": "Смещение Linux-раздела (-o)", "placeholder": "например: 227328" },
+        { "id": "filesystemType", "type": "select", "label": "Тип файловой системы", "options": ["ext4", "XFS", "Btrfs", "другой", "не определён"], "required": true },
+        { "id": "osVersion", "type": "text", "label": "Версия ОС (os-release)", "placeholder": "Ubuntu 18.04.6 LTS" },
+        { "id": "kernelVersion", "type": "text", "label": "Версия ядра Linux" },
+        { "id": "initSystem", "type": "select", "label": "Init-система", "options": ["systemd", "SysV", "другая", "не определена"] },
+        { "id": "journalType", "type": "select", "label": "Журналирование", "options": ["systemd-journald", "rsyslog/syslog", "смешанное", "не определено"] },
+        { "id": "webStack", "type": "select", "label": "Web-стек обнаружен?", "options": ["Apache", "Nginx", "оба", "нет", "не проверялось"] },
+        { "id": "priorityCatalogs", "type": "checkboxes", "label": "Приоритетные каталоги для анализа", "options": ["/etc", "/var/log", "/var/tmp", "/tmp", "SSH (~/.ssh)", "systemd units", "cron", "web-логи"] },
+        { "id": "verifyNotes", "type": "textarea", "label": "Заметки этапа верификации" }
+      ]
+    },
+    {
+      "id": "disk",
+      "order": 3,
+      "title": "Комплексный анализ образа жёсткого диска",
+      "goal": "Извлечь постоянные артефакты: конфигурации, журналы, файлы, следы запуска, удалённые объекты",
+      "expectedResult": "Корпус дисковых артефактов с привязкой к файлам, пользователям, временным меткам, службам",
+      "skipIf": { "hasDiskImage": "нет" },
+      "guide": [
+        "1. Целостность: ewfverify/ewfmount (E01) или sha256sum + mmls + fsstat (raw)",
+        "2. Полный перечень: fls -r -p -l -m / -z UTC -o <offset>",
+        "3. Приоритетные группы: /etc, /var/log, /tmp, SSH, cron, systemd, web-логи",
+        "4. Точечное извлечение: istat, icat для значимых inode",
+        "5. Сопоставление конфигурации web-сервиса с журналами"
+      ],
+      "artifactGroups": [
+        { "name": "Конфигурационные", "sources": "/etc, /etc/ssh, web-конфиги" },
+        { "name": "Журнальные", "sources": "/var/log, journal" },
+        { "name": "Persistence", "sources": "unit/timer, cron, startup files" },
+        { "name": "Пользовательские", "sources": "home, .bash_history, authorized_keys" },
+        { "name": "Web-стек", "sources": "access/error logs, vhost, PHP" },
+        { "name": "Удалённые/скрытые", "sources": "deleted entries, unallocated" }
+      ],
+      "fields": [
+        { "id": "integrityVerified", "type": "select", "label": "Целостность образа подтверждена повторно?", "options": ["да", "нет"], "required": true },
+        { "id": "flsIndexCreated", "type": "select", "label": "Создан рекурсивный индекс fls?", "options": ["да", "нет"], "required": true },
+        { "id": "configArtifacts", "type": "textarea", "label": "Конфигурационные артефакты (/etc, ssh, web)" },
+        { "id": "logArtifacts", "type": "textarea", "label": "Журнальные артефакты (auth, syslog, journal)" },
+        { "id": "userArtifacts", "type": "textarea", "label": "Пользовательские артефакты (history, SSH-ключи)" },
+        { "id": "webArtifacts", "type": "textarea", "label": "Web-артефакты (логи, конфиги Apache/Nginx)" },
+        { "id": "suspiciousFiles", "type": "textarea", "label": "Подозрительные/вредоносные файлы на диске" },
+        { "id": "deletedObjects", "type": "textarea", "label": "Удалённые или скрытые объекты" },
+        { "id": "diskConclusions", "type": "textarea", "label": "Промежуточные выводы дискового анализа" }
+      ]
+    },
+    {
+      "id": "ram",
+      "order": 4,
+      "title": "Исследование дампа оперативной памяти Linux-системы",
+      "goal": "Выявить процессы, связи, модули ядра, команды и сокеты на момент захвата",
+      "expectedResult": "Волатильный профиль: PID, процессы, модули, сокеты, shell memory",
+      "skipIf": { "hasRamDump": "нет" },
+      "guide": [
+        "Проверить дамп: размер, хеш, формат LiME, digest-файл",
+        "Volatility 3: banners → версия ядра",
+        "Подготовка ISF: dwarf2json + System.map + config (при несовпадении баннера)",
+        "linux.pslist + linux.psscan + linux.pstree",
+        "linux.lsmod, linux.check_modules, linux.sockstat",
+        "linux.bash, linux.kmsg, strings по IOC"
+      ],
+      "qualityCheckpoints": [
+        "Совпадение banner памяти и ISF",
+        "Сопоставление pslist и psscan"
+      ],
+      "fields": [
+        { "id": "ramIntegrityOk", "type": "select", "label": "Целостность дампа RAM подтверждена?", "options": ["да", "нет"], "required": true },
+        { "id": "bannerKernel", "type": "text", "label": "Версия ядра (banners)", "placeholder": "Linux 5.4.0-1059-azure" },
+        { "id": "isfPrepared", "type": "select", "label": "Символьная таблица ISF подготовлена?", "options": ["да", "нет — использована готовая", "не требовалось"] },
+        { "id": "isfFileName", "type": "text", "label": "Имя ISF-файла", "showIf": { "isfPrepared": "да" } },
+        { "id": "processFindings", "type": "textarea", "label": "Процессы (pslist/psscan/pstree)" },
+        { "id": "hiddenProcesses", "type": "textarea", "label": "Расхождения pslist/psscan (скрытые процессы)" },
+        { "id": "kernelModules", "type": "textarea", "label": "Модули ядра (lsmod, check_modules)" },
+        { "id": "memoryStrings", "type": "textarea", "label": "Значимые строки в памяти (IOC, команды)" },
+        { "id": "ramConclusions", "type": "textarea", "label": "Промежуточные выводы RAM-анализа" }
+      ]
+    },
+    {
+      "id": "network",
+      "order": 5,
+      "title": "Анализ сетевых соединений",
+      "goal": "Установить факты сетевого взаимодействия, адреса, порты, процессы, признаки удалённого доступа",
+      "expectedResult": "Перечень сетевых событий с привязкой к процессам, журналам, IP, портам",
+      "guide": [
+        "Диск: журналы SSH, Apache/Nginx, firewall, syslog",
+        "Память: linux.sockstat (если есть дамп)",
+        "Сопоставить IP с аутентификацией, процессами, конфигурацией служб",
+        "IP сам по себе — не вывод; нужна корреляция"
+      ],
+      "fields": [
+        { "id": "listeningServices", "type": "textarea", "label": "Прослушиваемые службы (Listen, порты)" },
+        { "id": "sshNetworkFindings", "type": "textarea", "label": "SSH: попытки входа, успешные сессии, ключи" },
+        { "id": "webNetworkFindings", "type": "textarea", "label": "Web-журналы: IP, URI, коды ответа, IOC" },
+        { "id": "externalIps", "type": "textarea", "label": "Внешние IP-адреса и домены" },
+        { "id": "memorySockets", "type": "textarea", "label": "Сокеты из дампа RAM (sockstat)", "showIf": { "hasRamDump": "да" } },
+        { "id": "networkConclusions", "type": "textarea", "label": "Выводы сетевого анализа" }
+      ]
+    },
+    {
+      "id": "persistence",
+      "order": 6,
+      "title": "Выявление механизмов закрепления и модификаций системы",
+      "goal": "Обнаружить автозапуск, повышение привилегий, изменение штатной конфигурации",
+      "expectedResult": "Перечень persistence: systemd, cron, SSH, sudoers, скрипты",
+      "guide": [
+        "systemd unit/timer, cron (root и users)",
+        ".bashrc, .profile, authorized_keys",
+        "/etc/passwd, shadow, group, sudoers",
+        "Модификации web-служб и сетевых конфигов"
+      ],
+      "fields": [
+        { "id": "systemdUnits", "type": "textarea", "label": "Подозрительные systemd unit/timer" },
+        { "id": "cronJobs", "type": "textarea", "label": "Cron-задания (в т.ч. root crontab)" },
+        { "id": "sshKeysChanges", "type": "textarea", "label": "SSH-ключи и authorized_keys" },
+        { "id": "accountChanges", "type": "textarea", "label": "Изменения учётных записей (passwd, sudoers)" },
+        { "id": "startupScripts", "type": "textarea", "label": "Скрипты автозапуска (.bashrc, .profile, .service)" },
+        { "id": "serviceModifications", "type": "textarea", "label": "Модификации конфигураций служб" },
+        { "id": "persistenceConclusions", "type": "textarea", "label": "Выводы по механизмам закрепления" }
+      ]
+    },
+    {
+      "id": "correlation",
+      "order": 7,
+      "title": "Корреляция артефактов по времени, процессу и сети",
+      "goal": "Объединить дисковые и оперативные следы в событийную модель",
+      "expectedResult": "Корреляционная карта и реконструкция механизма события",
+      "guide": [
+        "Ось времени: метки ФС, auth, journal, web, RAM",
+        "Ось процесса: PID, PPID, пользователь, файлы на диске",
+        "Ось сети: IP, порты, сокеты, журналы",
+        "Каждая связь — минимум 2 независимых источника"
+      ],
+      "fields": [
+        { "id": "timelineEvents", "type": "textarea", "label": "Хронология ключевых событий", "required": true },
+        { "id": "correlationMatrix", "type": "textarea", "label": "Связи артефактов (время — субъект — процесс — файл — сеть)" },
+        { "id": "confirmedHypotheses", "type": "textarea", "label": "Подтверждённые гипотезы (≥2 источника)" },
+        { "id": "rejectedHypotheses", "type": "textarea", "label": "Опровергнутые гипотезы" },
+        { "id": "incidentMechanism", "type": "textarea", "label": "Реконструкция механизма инцидента", "required": true }
+      ]
+    },
+    {
+      "id": "document",
+      "order": 8,
+      "title": "Интерпретация и документирование результатов",
+      "goal": "Преобразовать технические результаты в процессуально проверяемые выводы",
+      "expectedResult": "Материалы для заключения эксперта (ст. 204 УПК РФ)",
+      "guide": [
+        "Ответы на поставленные вопросы",
+        "Перечень применённых методик и инструментов",
+        "Ограничения: LiME, ISF, состояние журналов",
+        "Контрольные точки качества методики"
+      ],
+      "fields": [
+        { "id": "answerQ1", "type": "textarea", "label": "Ответ: следы вредоносной активности", "required": true },
+        { "id": "answerQ2", "type": "textarea", "label": "Ответ: механизм и время компрометации", "required": true },
+        { "id": "answerQ3", "type": "textarea", "label": "Ответ: сетевые соединения", "required": true },
+        { "id": "answerQ4", "type": "textarea", "label": "Ответ: действия злоумышленника", "required": true },
+        { "id": "answerQ5", "type": "textarea", "label": "Ответ: механизмы закрепления", "required": true },
+        { "id": "toolsUsed", "type": "textarea", "label": "Применённые инструменты (TSK, Volatility 3, grep и др.)" },
+        { "id": "methodologyLimitations", "type": "textarea", "label": "Ограничения методики (LiME, ISF, журналы)" },
+        { "id": "finalConclusion", "type": "textarea", "label": "Итоговое заключение эксперта", "required": true }
+      ]
+    }
+  ]
+}

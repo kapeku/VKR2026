@@ -1,0 +1,72 @@
+<%- include('partials/head', { pageTitle: 'Отчёт', progress: typeof progress !== 'undefined' ? progress : null }) %>
+
+<div class="report-page">
+  <header class="report-header">
+    <h1>Отчёт по результатам экспертизы</h1>
+    <p class="meta">Сформирован: <%= report.generatedAt %></p>
+    <div class="report-actions">
+      <a href="/report/print" target="_blank" class="btn btn-primary">Печать / PDF</a>
+      <a href="/" class="btn btn-secondary">К этапам</a>
+    </div>
+  </header>
+
+  <section class="card report-summary">
+    <h2>Общие сведения</h2>
+    <table class="info-table">
+      <tr><th>Дело / постановление</th><td><%= report.caseNumber %></td></tr>
+      <tr><th>Эксперт</th><td><%= report.expertName %></td></tr>
+      <tr><th>Учреждение</th><td><%= report.expertOrg %></td></tr>
+      <tr><th>Дата приёма объектов</th><td><%= report.receiptDate %></td></tr>
+      <tr><th>Методика</th><td><%= report.title %></td></tr>
+    </table>
+  </section>
+
+  <% if (report.skippedStages && report.skippedStages.length) { %>
+    <section class="card skipped">
+      <h2>Этапы, не применённые (условная логика методики)</h2>
+      <ul>
+        <% report.skippedStages.forEach(function(s) { %>
+          <li><strong><%= s.title %></strong> — <%= s.reason %></li>
+        <% }); %>
+      </ul>
+    </section>
+  <% } %>
+
+  <% report.sections.forEach(function(sec) { %>
+    <section class="card report-section">
+      <h2><%= sec.order %>. <%= sec.title %></h2>
+      <p class="section-goal"><em>Цель:</em> <%= sec.goal %></p>
+      <% if (sec.fields && sec.fields.length) { %>
+        <table class="data-table">
+          <% sec.fields.forEach(function(row) { %>
+            <tr>
+              <th><%= row.label %></th>
+              <td><%= row.value %></td>
+            </tr>
+          <% }); %>
+        </table>
+      <% } else { %>
+        <p class="empty">Данные этапа не заполнены</p>
+      <% } %>
+    </section>
+  <% }); %>
+
+  <section class="card report-conclusions">
+    <h2>Ответы на вопросы и заключение</h2>
+    <ol class="expert-answers">
+      <li><strong>Следы вредоносной активности:</strong><br><%= report.documentAnswers.q1 || '—' %></li>
+      <li><strong>Механизм и время компрометации:</strong><br><%= report.documentAnswers.q2 || '—' %></li>
+      <li><strong>Сетевые соединения:</strong><br><%= report.documentAnswers.q3 || '—' %></li>
+      <li><strong>Действия злоумышленника:</strong><br><%= report.documentAnswers.q4 || '—' %></li>
+      <li><strong>Механизмы закрепления:</strong><br><%= report.documentAnswers.q5 || '—' %></li>
+    </ol>
+    <h3>Применённые инструменты</h3>
+    <p><%= report.documentAnswers.tools || '—' %></p>
+    <h3>Ограничения методики</h3>
+    <p><%= report.documentAnswers.limitations || '—' %></p>
+    <h3>Итоговое заключение</h3>
+    <div class="final-box"><%= report.documentAnswers.final || '—' %></div>
+  </section>
+</div>
+
+<%- include('partials/foot') %>

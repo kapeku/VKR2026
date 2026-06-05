@@ -1,0 +1,51 @@
+<%- include('partials/head', { pageTitle: 'Главная', progress: progress }) %>
+<div class="hero">
+  <h1><%= methodology.title %></h1>
+  <p class="source"><%= methodology.source %></p>
+  <p class="lead">
+    Интерактивный гайд-лист и чек-лист для пошагового проведения компьютерно-технической экспертизы.
+    Этапы включаются и отключаются в зависимости от представленных объектов (образ диска, дамп ОЗУ).
+  </p>
+</div>
+
+<div class="card progress-card">
+  <h2>Прогресс исследования</h2>
+  <div class="progress-large">
+    <div class="progress-bar"><div class="progress-fill" style="width:<%= progress.percent %>%"></div></div>
+    <span class="progress-text"><%= progress.completed %> из <%= progress.total %> этапов завершено (<%= progress.percent %>%)</span>
+  </div>
+</div>
+
+<div class="stages-grid">
+  <% progress.stages.forEach(function(s) { %>
+    <a href="/stage/<%= s.id %>" class="stage-card <%= s.completed ? 'completed' : '' %>">
+      <span class="stage-num"><%= s.order %></span>
+      <h3><%= s.title %></h3>
+      <% if (s.completed) { %><span class="badge badge-ok">Завершён</span><% } else { %><span class="badge">В работе</span><% } %>
+    </a>
+  <% }); %>
+</div>
+
+<div class="card questions-card">
+  <h2>Вопросы эксперту (постановление)</h2>
+  <ol>
+    <% methodology.expertQuestions.forEach(function(q) { %>
+      <li><%= q %></li>
+    <% }); %>
+  </ol>
+</div>
+
+<div class="actions-bar">
+  <% if (progress.completed === progress.total && progress.total > 0) { %>
+    <a href="/report" class="btn btn-primary">Сформировать отчёт</a>
+  <% } else { %>
+    <% const firstIncomplete = progress.stages.find(s => !s.completed); %>
+    <a href="/stage/<%= firstIncomplete ? firstIncomplete.id : progress.stages[0].id %>" class="btn btn-primary">
+      <%= progress.completed ? 'Продолжить' : 'Начать экспертизу' %>
+    </a>
+  <% } %>
+  <form action="/reset" method="post" class="inline-form" onsubmit="return confirm('Начать новое исследование? Все данные будут удалены.');">
+    <button type="submit" class="btn btn-secondary">Новое исследование</button>
+  </form>
+</div>
+<%- include('partials/foot') %>

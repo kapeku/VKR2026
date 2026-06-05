@@ -1,0 +1,31 @@
+<% const val = typeof saved !== 'undefined' && saved[field.id] !== undefined ? saved[field.id] : ''; %>
+<div class="form-group field-<%= field.type %>" data-field-id="<%= field.id %>"<% if (field.showIf) { %> data-show-if='<%- JSON.stringify(field.showIf) %>'<% } %>>
+  <label for="<%= field.id %>">
+    <%= field.label %>
+    <% if (field.required) { %><span class="required">*</span><% } %>
+  </label>
+  <% if (field.type === 'text') { %>
+    <input type="text" id="<%= field.id %>" name="<%= field.id %>" value="<%= val %>" placeholder="<%= field.placeholder || '' %>">
+  <% } else if (field.type === 'date') { %>
+    <input type="date" id="<%= field.id %>" name="<%= field.id %>" value="<%= val %>">
+  <% } else if (field.type === 'select') { %>
+    <select id="<%= field.id %>" name="<%= field.id %>">
+      <option value="">— выберите —</option>
+      <% (field.options || []).forEach(function(opt) { %>
+        <option value="<%= opt %>" <%= val === opt ? 'selected' : '' %>><%= opt %></option>
+      <% }); %>
+    </select>
+  <% } else if (field.type === 'textarea') { %>
+    <textarea id="<%= field.id %>" name="<%= field.id %>" rows="4" placeholder="<%= field.placeholder || '' %>"><%= val %></textarea>
+  <% } else if (field.type === 'checkboxes') { %>
+    <div class="checkbox-group">
+      <% const selected = Array.isArray(val) ? val : []; %>
+      <% (field.options || []).forEach(function(opt) { %>
+        <label class="checkbox-label">
+          <input type="checkbox" name="<%= field.id %>" value="<%= opt %>" <%= selected.includes(opt) ? 'checked' : '' %>>
+          <%= opt %>
+        </label>
+      <% }); %>
+    </div>
+  <% } %>
+</div>

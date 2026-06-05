@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Отчёт КТЭ Linux — <%= report.caseNumber %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/print.css">
+</head>
+<body class="print-body">
+  <h1>Материалы компьютерно-технической экспертизы Linux-системы</h1>
+  <p><strong>Дело:</strong> <%= report.caseNumber %> | <strong>Эксперт:</strong> <%= report.expertName %> | <strong>Дата:</strong> <%= report.generatedAt %></p>
+  <hr>
+
+  <% report.sections.forEach(function(sec) { %>
+    <h2><%= sec.order %>. <%= sec.title %></h2>
+    <% if (sec.fields && sec.fields.length) { %>
+      <% sec.fields.forEach(function(row) { %>
+        <p><strong><%= row.label %>:</strong> <%= row.value %></p>
+      <% }); %>
+    <% } %>
+    <hr>
+  <% }); %>
+
+  <h2>Заключение</h2>
+  <p><%= report.documentAnswers.final || '—' %></p>
+  <script>window.onload = function() { window.print(); };</script>
+</body>
+</html>

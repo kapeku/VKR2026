@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' — ' : '' %>КТЭ Linux</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">КТЭ Linux</a>
+      <span class="tagline">Помощник эксперта</span>
+      <% if (typeof progress !== 'undefined' && progress) { %>
+        <div class="header-progress">
+          <span><%= progress.completed %> / <%= progress.total %></span>
+          <div class="progress-bar"><div class="progress-fill" style="width:<%= progress.percent %>%"></div></div>
+        </div>
+      <% } %>
+    </div>
+  </header>
+  <main class="container main-content">

@@ -1,0 +1,4 @@
+node_modules/
+_thesis_extract.txt
+*.log
+.env

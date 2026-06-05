@@ -1,0 +1,63 @@
+<%- include('partials/head', { pageTitle: stage.title, progress: progress }) %>
+
+<nav class="breadcrumb">
+  <a href="/">Этапы</a> → <span>Этап <%= stage.order %></span>
+</nav>
+
+<article class="stage-page">
+  <header class="stage-header">
+    <span class="stage-num-large"><%= stage.order %></span>
+    <div>
+      <h1><%= stage.title %></h1>
+      <p class="stage-goal"><strong>Цель:</strong> <%= stage.goal %></p>
+      <p class="stage-result"><strong>Ожидаемый результат:</strong> <%= stage.expectedResult %></p>
+    </div>
+  </header>
+
+  <% if (stage.guide && stage.guide.length) { %>
+    <aside class="guide-panel card">
+      <h2>Гайд-лист действий эксперта</h2>
+      <ol class="guide-list">
+        <% stage.guide.forEach(function(item) { %>
+          <li><%= item %></li>
+        <% }); %>
+      </ol>
+      
+      <% if (stage.artifactGroups && stage.artifactGroups.length) { %>
+        <h3>Группы дисковых артефактов (табл. 3.4)</h3>
+        <table class="artifact-table">
+          <thead><tr><th>Группа</th><th>Источники</th></tr></thead>
+          <tbody>
+            <% stage.artifactGroups.forEach(function(g) { %>
+              <tr><td><%= g.name %></td><td><%= g.sources %></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </aside>
+  <% } %>
+
+  <section class="form-section card">
+    <h2>Чек-лист: данные этапа</h2>
+    <% if (typeof query !== 'undefined' || (typeof saved !== 'undefined' && Object.keys(saved).length)) { %>
+      <% /* saved message via URL */ %>
+    <% } %>
+    <form method="post" action="/stage/<%= stage.id %>" class="expert-form" id="stageForm">
+      <% visibleFields.forEach(function(field) { %>
+        <%- include('partials/field', { field: field, saved: saved }) %>
+      <% }); %>
+
+      <div class="form-actions">
+        <% if (prevId) { %>
+          <a href="/stage/<%= prevId %>" class="btn btn-secondary">← Назад</a>
+        <% } %>
+        <button type="submit" name="action" value="save" class="btn btn-outline">Сохранить черновик</button>
+        <button type="submit" name="action" value="complete" class="btn btn-primary">
+          <%= nextId ? 'Завершить и далее →' : 'Завершить и к отчёту' %>
+        </button>
+      </div>
+    </form>
+  </section>
+</article>
+
+<%- include('partials/foot') %>

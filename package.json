@@ -1,0 +1,23 @@
+{
+  "name": "linux-cte-expert-assistant",
+  "version": "1.0.0",
+  "description": "Помощник эксперта по КТЭ ПК под управлением ОС Linux (ВКР)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "forensics",
+    "linux",
+    "expertise"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "node.js": "^0.0.1-security",
+    "uuid": "^11.0.3"
+  }
+}
