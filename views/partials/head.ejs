@@ -17,6 +17,14 @@
           <div class="progress-bar"><div class="progress-fill" style="width:<%= progress.percent %>%"></div></div>
         </div>
       <% } %>
+      <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+        <div class="user-menu">
+          <span><%= currentUser.name %></span>
+          <form action="/logout" method="post" class="inline-form">
+            <button type="submit" class="btn btn-secondary btn-small">Выйти</button>
+          </form>
+        </div>
+      <% } %>
     </div>
   </header>
   <main class="container main-content">

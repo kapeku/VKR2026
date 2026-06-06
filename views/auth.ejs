@@ -1,0 +1,51 @@
+<%- include('partials/head', { pageTitle: pageTitle }) %>
+
+<section class="auth-layout">
+  <div class="auth-panel card">
+    <h1><%= mode === 'register' ? 'Регистрация' : 'Вход' %></h1>
+    <p class="auth-hint">
+      <%= mode === 'register'
+        ? 'Создайте учетную запись эксперта для доступа к материалам исследования.'
+        : 'Войдите, чтобы продолжить работу с исследованием.' %>
+    </p>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="post" action="/<%= mode === 'register' ? 'register' : 'login' %>" class="auth-form">
+      <input type="hidden" name="returnTo" value="<%= returnTo %>">
+
+      <% if (mode === 'register') { %>
+        <div class="form-group">
+          <label for="name">ФИО эксперта</label>
+          <input id="name" type="text" name="name" value="<%= values.name || '' %>" autocomplete="name">
+        </div>
+      <% } %>
+
+      <div class="form-group">
+        <label for="login">Логин</label>
+        <input id="login" type="text" name="login" value="<%= values.login || '' %>" autocomplete="username" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Пароль</label>
+        <input id="password" type="password" name="password" autocomplete="<%= mode === 'register' ? 'new-password' : 'current-password' %>" required minlength="6">
+      </div>
+
+      <button type="submit" class="btn btn-primary auth-submit">
+        <%= mode === 'register' ? 'Зарегистрироваться' : 'Войти' %>
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      <% if (mode === 'register') { %>
+        Уже есть учетная запись? <a href="/login?returnTo=<%= encodeURIComponent(returnTo) %>">Войти</a>
+      <% } else { %>
+        Нет учетной записи? <a href="/register?returnTo=<%= encodeURIComponent(returnTo) %>">Зарегистрироваться</a>
+      <% } %>
+    </p>
+  </div>
+</section>
+
+<%- include('partials/foot') %>

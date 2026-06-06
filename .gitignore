@@ -2,3 +2,4 @@ node_modules/
 _thesis_extract.txt
 *.log
 .env
+data/users.json

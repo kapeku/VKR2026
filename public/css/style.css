@@ -51,6 +51,14 @@ body {
 .header-progress { margin-left: auto; min-width: 140px; }
 .header-progress span { font-size: 0.8rem; color: var(--muted); }
 
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .progress-bar {
   height: 6px;
   background: var(--surface2);
@@ -145,6 +153,11 @@ body {
   text-decoration: none;
   border: none;
   font-family: inherit;
+}
+
+.btn-small {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
 }
 
 .btn-primary { background: var(--accent); color: #fff; }
@@ -296,3 +309,45 @@ body {
 .skipped ul { color: var(--muted); }
 
 .error-card { text-align: center; padding: 2rem; }
+
+.auth-layout {
+  display: grid;
+  place-items: center;
+  min-height: 62vh;
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-panel h1 {
+  margin-top: 0;
+}
+
+.auth-hint,
+.auth-switch {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-switch a {
+  color: var(--accent);
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.alert {
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.alert-error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}

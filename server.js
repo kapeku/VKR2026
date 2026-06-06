@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
+const { createUser, findUserByLogin, publicUser, verifyPassword } = require('./lib/auth');
 const {
   loadMethodology,
   getActiveStages,
@@ -39,9 +40,15 @@ function ensureSession(req) {
   return req.session.investigation;
 }
 
+function requireAuth(req, res, next) {
+  if (req.session.user) return next();
+  res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+}
+
 app.use((req, res, next) => {
   res.locals.methodology = loadMethodology();
   res.locals.inv = req.session.investigation;
+  res.locals.currentUser = req.session.user || null;
   if (req.session.investigation) {
     res.locals.progress = getProgress(req.session.investigation);
     res.locals.activeStages = getActiveStages(req.session.investigation);
@@ -49,19 +56,83 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
+app.get('/login', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  res.render('auth', {
+    mode: 'login',
+    pageTitle: 'Вход',
+    error: null,
+    values: { login: '' },
+    returnTo: req.query.returnTo || '/'
+  });
+});
+
+app.post('/login', (req, res) => {
+  const returnTo = req.body.returnTo || '/';
+  const user = findUserByLogin(req.body.login);
+
+  if (!user || !verifyPassword(req.body.password, user.passwordHash)) {
+    return res.status(401).render('auth', {
+      mode: 'login',
+      pageTitle: 'Вход',
+      error: 'Неверный логин или пароль',
+      values: { login: req.body.login || '' },
+      returnTo
+    });
+  }
+
+  req.session.user = publicUser(user);
+  res.redirect(returnTo.startsWith('/') ? returnTo : '/');
+});
+
+app.get('/register', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  res.render('auth', {
+    mode: 'register',
+    pageTitle: 'Регистрация',
+    error: null,
+    values: { login: '', name: '' },
+    returnTo: req.query.returnTo || '/'
+  });
+});
+
+app.post('/register', (req, res) => {
+  try {
+    const user = createUser(req.body);
+    req.session.user = publicUser(user);
+    res.redirect((req.body.returnTo || '/').startsWith('/') ? req.body.returnTo || '/' : '/');
+  } catch (error) {
+    res.status(400).render('auth', {
+      mode: 'register',
+      pageTitle: 'Регистрация',
+      error: error.message,
+      values: {
+        login: req.body.login || '',
+        name: req.body.name || ''
+      },
+      returnTo: req.body.returnTo || '/'
+    });
+  }
+});
+
+app.post('/logout', (req, res) => {
+  req.session.user = null;
+  res.redirect('/login');
+});
+
+app.get('/', requireAuth, (req, res) => {
   const inv = ensureSession(req);
   const progress = getProgress(inv);
   res.render('index', { inv, progress });
 });
 
-app.post('/reset', (req, res) => {
+app.post('/reset', requireAuth, (req, res) => {
   req.session.investigation = createEmptySession();
   req.session.investigation.id = uuidv4();
   res.redirect('/');
 });
 
-app.get('/stage/:stageId', (req, res) => {
+app.get('/stage/:stageId', requireAuth, (req, res) => {
   const inv = ensureSession(req);
   const stage = getStageById(req.params.stageId);
   if (!stage) return res.status(404).render('error', { message: 'Этап не найден' });
@@ -88,7 +159,7 @@ app.get('/stage/:stageId', (req, res) => {
   });
 });
 
-app.post('/stage/:stageId', (req, res) => {
+app.post('/stage/:stageId', requireAuth, (req, res) => {
   const inv = ensureSession(req);
   const stage = getStageById(req.params.stageId);
   if (!stage) return res.status(404).send('Этап не найден');
@@ -126,13 +197,13 @@ app.post('/stage/:stageId', (req, res) => {
   res.redirect(`/stage/${stage.id}?saved=1`);
 });
 
-app.get('/report', (req, res) => {
+app.get('/report', requireAuth, (req, res) => {
   const inv = ensureSession(req);
   const report = buildReport(inv);
   res.render('report', { report, inv });
 });
 
-app.get('/report/print', (req, res) => {
+app.get('/report/print', requireAuth, (req, res) => {
   const inv = ensureSession(req);
   const report = buildReport(inv);
   res.render('report-print', { report, inv });
