@@ -243,6 +243,7 @@ body {
 .required { color: #f87171; }
 
 .form-group input[type="text"],
+.form-group input[type="password"],
 .form-group input[type="date"],
 .form-group select,
 .form-group textarea {
@@ -254,6 +255,12 @@ body {
   color: var(--text);
   font-family: inherit;
   font-size: 0.9rem;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .form-group textarea { resize: vertical; min-height: 80px; }
